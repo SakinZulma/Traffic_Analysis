@@ -1,0 +1,8 @@
+numpy
+lap
+ultralytics
+opencv-python
+pytesseract
+fast_plate_ocr
+nvidia-pyindex
+nvidia-tensorrt
