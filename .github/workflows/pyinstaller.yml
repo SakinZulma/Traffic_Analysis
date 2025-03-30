@@ -12,34 +12,10 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            container: ubuntu:20.04
-          - os: windows-latest
-          - os: macos-latest
-
+        os: [ubuntu-20.04, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-    
-    # Use Ubuntu 20.04 for Linux builds
-    container: ${{ matrix.container }}
 
     steps:
-      - name: Install dependencies for Ubuntu 20.04
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          apt update && apt install -y python3 python3-pip patchelf
-          pip install  lap numpy ultralytics opencv-python  pytesseract fast_plate_ocr
-          pip install pyinstaller
-
-      - name: Install dependencies for Windows/macos
-        if: matrix.os != 'ubuntu-latest'
-        run: |
-          python3 -m pip install --upgrade pip
-          pip install  lap numpy ultralytics opencv-python  pytesseract fast_plate_ocr
-          pip install pyinstaller
-
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -48,12 +24,24 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y patchelf
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install lap numpy ultralytics opencv-python pytesseract fast_plate_ocr
+          pip install pyinstaller
+
       - name: Build executable with PyInstaller
         run: |
-          pyinstaller --onefile --name=main_${{ matrix.os }} main.py
+          pyinstaller --onefile --name=main_${{ runner.os }} main.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: executable-${{ matrix.os }}
-          path: dist/main_${{ matrix.os }}
+          name: executable-${{ runner.os }}
+          path: dist/main_${{ runner.os }}*
