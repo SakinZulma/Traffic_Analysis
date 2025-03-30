@@ -16,7 +16,7 @@ import pandas as pd
 
 video_test = './videos/car.mp4'
 CAMERA_ANGLE = "Right"
-
+OUTPUT_VIDEO = True
 
 
 class VehicleTracker:
@@ -264,7 +264,6 @@ if not cap.isOpened():
 frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = cap.get(cv2.CAP_PROP_FPS)
-out = cv2.VideoWriter('output1.mp4', cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
 
 tracker = VehicleTracker(frame_height, frame_width)       
 
@@ -356,27 +355,28 @@ while True:
         
         # Get direction and color coding
         direction = tracker.get_direction(vid)
-
-        color = ((0, 255, 0) if direction == "Entering" else (0, 0, 255) if direction == "Leaving" else (255, 255, 0) if direction == "Stationary" else (200, 200, 200))
         
-        if direction != "Unkonwn":
-            # Draw vehicle box and info
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(frame, f"{vid}: {direction}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        if OUTPUT_VIDEO == True:
+            color = ((0, 255, 0) if direction == "Entering" else (0, 0, 255) if direction == "Leaving" else (255, 255, 0) if direction == "Stationary" else (200, 200, 200))
         
-        # Draw movement trail
-        positions = tracker.tracks[vid]['positions']
-        for i in range(1, len(positions)):
-            pt1 = (int(positions[i-1][0]), int(positions[i-1][1]))
-            pt2 = (int(positions[i][0]), int(positions[i][1]))
-            cv2.line(frame, pt2, pt1, (255, 0, 0), 2)
+            if direction != "Unkonwn":
+                # Draw vehicle box and info
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                cv2.putText(frame, f"{vid}: {direction}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        
+            # Draw movement trail
+            positions = tracker.tracks[vid]['positions']
+            for i in range(1, len(positions)):
+                pt1 = (int(positions[i-1][0]), int(positions[i-1][1]))
+                pt2 = (int(positions[i][0]), int(positions[i][1]))
+                cv2.line(frame, pt2, pt1, (255, 0, 0), 2)
             
     # Update results and counters
     for vid, data in tracker.tracks.items():
         results[frame_nmr][vid] = {'vehicle_type': next((v['class'] for v in current_vehicles if v['id'] == vid), None),'vehicle_score': next((v['score'] for v in current_vehicles if v['id'] == vid), None),'car_bbox': next((v['bbox'] for v in current_vehicles if v['id'] == vid), None),'timestamp': timestamp,'direction': tracker.get_direction(vid),'license_plate': data['lp_info']}
 
-
-    out.write(frame)
+    if OUTPUT_VIDEO == True:
+        out.write(frame)
 
 
 
