@@ -1,3 +1,4 @@
+
 from ultralytics import YOLO
 import cv2
 import numpy as np
@@ -10,13 +11,34 @@ import pandas as pd
 import re
 from itertools import product
 import pandas as pd
+import os
+import sys
+
+
+if getattr(sys, 'frozen', False):
+    torch.hub.set_dir(os.path.join(sys._MEIPASS, 'hub'))
+    cv2.ocl.setUseOpenCL(False)
 
 
 
 
-video_test = './videos/car.mp4'
+
+# Get the directory of the executable
+if getattr(sys, 'frozen', False):  # Running as an executable
+    base_path = sys._MEIPASS
+else:
+    base_path = os.path.dirname(os.path.abspath(__file__))
+
+video_path = os.path.join(base_path, "video/car.mp4")
+
+# Check if the file exists
+if not os.path.exists(video_path):
+    print(f"Error: Video file not found at {video_path}")
+    sys.exit(1)
+
+video_test = video_path
 CAMERA_ANGLE = "Right"
-OUTPUT_VIDEO = True
+OUTPUT_VIDEO = False
 
 
 class VehicleTracker:
@@ -258,7 +280,7 @@ def license_plate_processing(image):
 cap = cv2.VideoCapture(video_test)
 if not cap.isOpened():
     print("Error: Could not open video")
-    exit()
+    sys.exit(1)
 
 # Get frame dimensions and fps
 frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -275,16 +297,28 @@ direction = ""
 frame_nmr = - 1
 
 # Load YOLO models (using .track for detection and tracking)
-vehicle_detector = YOLO('./models/class.pt')
 
-license_plate_detector = YOLO('./models/license.pt')
+# Change model loading to use base_path
+model_dir = os.path.join(base_path, 'models')
+vehicle_detector = YOLO(os.path.join(model_dir, 'class.pt'))
+license_plate_detector = YOLO(os.path.join(model_dir, 'license.pt'))
+
+# Update ONNXPlateRecognizer initialization
+
+#vehicle_detector = YOLO('./models/class.pt')
+
+#license_plate_detector = YOLO('./models/license.pt')
+
 m = ONNXPlateRecognizer('global-plates-mobile-vit-v2-model')
 
 
 results = {}  
 frame_count = 0
 
-
+# Missing this before the processing loop
+if OUTPUT_VIDEO:
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter('output.mp4', fourcc, fps, (frame_width, frame_height))
 
 
 # --- Processing Loop ---
@@ -359,7 +393,7 @@ while True:
         if OUTPUT_VIDEO == True:
             color = ((0, 255, 0) if direction == "Entering" else (0, 0, 255) if direction == "Leaving" else (255, 255, 0) if direction == "Stationary" else (200, 200, 200))
         
-            if direction != "Unkonwn":
+            if direction != "Unknown":
                 # Draw vehicle box and info
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame, f"{vid}: {direction}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
@@ -387,9 +421,10 @@ cap.release()
 cv2.destroyAllWindows()
 
 
+file_path = os.path.join(base_path, 'sample.csv')
 
 # Load the CSV file
-file_path = "./sample.csv"
+#file_path = "./sample.csv"
 df = pd.read_csv(file_path)
 
 # Drop rows with missing values in the first 7 columns

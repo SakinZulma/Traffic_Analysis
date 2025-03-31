@@ -1,4 +1,4 @@
 # Ignore Models
 models/
 videos/
-main_ubuntu-latest
+main_*
