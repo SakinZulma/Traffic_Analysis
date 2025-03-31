@@ -38,10 +38,16 @@ jobs:
 
       - name: Build executable with PyInstaller
         run: |
-          pyinstaller --onefile --name=main_${{ runner.os }} main.py
+          if [ "$RUNNER_OS" == "Windows" ]; then \
+            pyinstaller --onefile --add-data "videos;videos" --add-data "models;models" --name=main_${{ runner.os }} main.py; \
+          else \
+            pyinstaller --onefile --add-data "videos:videos" --add-data "models:models" --name=main_${{ runner.os }} main.py; \
+          fi
+        shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: executable-${{ runner.os }}
-          path: dist/main_${{ runner.os }}*
+          path: dist/main_*
+
