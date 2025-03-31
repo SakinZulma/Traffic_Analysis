@@ -36,9 +36,16 @@ jobs:
           pip install lap numpy ultralytics opencv-python pytesseract fast_plate_ocr
           pip install pyinstaller
 
+      - name: Download models and videos
+        run: |
+          pip install gdown
+
+          gdown --id 1Ft-YYXRKR9qVLmLsuamav9O5Q9dnuV8e -O models --folder
+          gdown --id 1ziDzYzryaEvtB2FvitYdHCg_zYnooP1o -O videos --folder
+
       - name: Build executable with PyInstaller
         run: |
-          pyinstaller --onefile --add-data videos:videos --name=main_${{ runner.os }} main.py
+          pyinstaller --onefile --add-data videos:videos --add-data models:models --name=main_${{ runner.os }} main.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
