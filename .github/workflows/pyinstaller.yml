@@ -12,7 +12,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-20.04, windows-latest, macos-latest]
+        os: [ubuntu-20.04, macos-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -38,16 +38,10 @@ jobs:
 
       - name: Build executable with PyInstaller
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then \
-            pyinstaller --onefile --add-data "videos;videos" --add-data "models;models" --name=main_${{ runner.os }} main.py; \
-          else \
-            pyinstaller --onefile --add-data "videos:videos" --add-data "models:models" --name=main_${{ runner.os }} main.py; \
-          fi
-        shell: bash
+          pyinstaller --onefile --add-data videos:videos models:models --name=main_${{ runner.os }} main.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: executable-${{ runner.os }}
-          path: dist/main_*
-
+          path: dist/main_${{ runner.os }}*
